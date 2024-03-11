@@ -8,3 +8,4 @@ ruff
 pre-commit
 slack_sdk
 arxiv~=2.0.0
+anthropic
