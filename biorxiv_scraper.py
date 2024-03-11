@@ -19,43 +19,20 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 @dataclass
 class Paper:
-    __slots__ = ['_authors', '_title', '_abstract', '_doi', '_link']  # Prevents dynamic attribute assignment
-    
     def __init__(self, authors: List[str], title: str, abstract: str, doi: str, link: str):
-        self._authors = tuple(authors)  # Make authors immutable
-        self._title = title
-        self._abstract = abstract
-        self._doi = doi
-        self._link = link
-
-    @property
-    def authors(self):
-        return self._authors
-
-    @property
-    def title(self):
-        return self._title
-
-    @property
-    def abstract(self):
-        return self._abstract
-
-    @property
-    def doi(self):
-        return self._doi
-
-    @property
-    def link(self):
-        return self._link
+        self.authors = tuple(authors)  # Make authors immutable
+        self.title = title
+        self.abstract = abstract
+        self.doi = doi
+        self.link = link
 
     def __hash__(self):
-        return hash(self._doi)  # Ensure this matches with the immutable identifier
+        return hash(self.doi)  # Ensure this matches with the immutable identifier
 
     def __eq__(self, other):
         if not isinstance(other, Paper):
             return False
-        return self._doi == other._doi  # Ensuring equality checks are based on a unique property
-
+        return self.doi == other.doi  # Ensuring equality checks are based on a unique property
 
 def is_earlier(ts1, ts2):
     # compares two biorxiv ids, returns true if ts1 is older than ts2
