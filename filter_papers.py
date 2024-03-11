@@ -1,6 +1,7 @@
 import configparser
 import dataclasses
 import json
+import os
 import re
 from typing import List
 
@@ -63,10 +64,20 @@ def calc_price(model, usage):
 
 
 @retry.retry(tries=3, delay=2)
-def call_client(full_prompt, client, config):
+def call_client(full_prompt, config):
     client_type = config["SELECTION"]["model_provider"]
     model = config["SELECTION"]["model"]
+
     if client_type == "openai":
+        # Set up client
+        OAI_KEY = os.environ.get("OAI_KEY")
+        if OAI_KEY is None:
+            raise ValueError(
+                "OpenAI key is not set - please set OAI_KEY to your OpenAI key"
+            )
+        client = OpenAI(api_key=OAI_KEY)
+
+        # Get response
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": full_prompt}],
@@ -75,6 +86,11 @@ def call_client(full_prompt, client, config):
         )
         content, usage = response.choices[0].message.content, response.usage
     elif client_type == "anthropic":
+        # Set up client
+        ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+        # Get response
         message = client.messages.create(
             model=model,
             max_tokens=4096,
@@ -91,9 +107,9 @@ def call_client(full_prompt, client, config):
     return content, usage
 
 
-def run_and_parse_chatgpt(full_prompt, client, config):
+def run_and_parse_chatgpt(full_prompt, config):
     # just runs the chatgpt prompt, tries to parse the resulting JSON
-    content, usage = call_client(full_prompt, client, config)
+    content, usage = call_client(full_prompt, config)
     out_text = out_text
     out_text = re.sub("```jsonl\n", "", out_text)
     out_text = re.sub("```", "", out_text)
@@ -140,7 +156,7 @@ def batched(items, batch_size):
 
 
 def filter_papers_by_title(
-    papers, config, client, base_prompt, criterion
+    papers, config, base_prompt, criterion
 ) -> List[Paper]:
     filter_postfix = 'Identify any papers that are absolutely and completely irrelavent to the criteria, and you are absolutely sure your friend will not enjoy, formatted as a list of DOIs like ["DOI1", "DOI2", "DOI3"..]. Be extremely cautious, and if you are unsure at all, do not add a paper in this list. You will check it in detail later.\n Directly respond with the list, do not add ANY extra text before or after the list. Even if every paper seems irrelevant, please keep at least TWO papers'
     batches_of_papers = batched(papers, 20)
@@ -152,7 +168,7 @@ def filter_papers_by_title(
             base_prompt + "\n " + criterion + "\n" + papers_string + filter_postfix
         )
         model = config["SELECTION"]["model"]
-        content, usage = call_client(full_prompt, client, config)
+        content, usage = call_client(full_prompt, config)
         cost += calc_price(model, usage)
         out_text = content
         try:
@@ -175,7 +191,7 @@ def paper_to_titles(paper_entry: Paper) -> str:
 
 
 def run_on_batch(
-    paper_batch, base_prompt, criterion, postfix_prompt, client, config
+    paper_batch, base_prompt, criterion, postfix_prompt, config
 ):
     batch_str = [paper_to_string(paper) for paper in paper_batch]
     full_prompt = "\n".join(
@@ -186,12 +202,12 @@ def run_on_batch(
             postfix_prompt,
         ]
     )
-    json_dicts, cost = run_and_parse_chatgpt(full_prompt, client, config)
+    json_dicts, cost = run_and_parse_chatgpt(full_prompt, config)
     return json_dicts, cost
 
 
 def filter_by_gpt(
-    all_authors, papers, config, client, all_papers, selected_papers, sort_dict
+    all_authors, papers, config, all_papers, selected_papers, sort_dict
 ):
     # deal with config parsing
     with open("configs/base_prompt.txt", "r") as f:
@@ -208,7 +224,7 @@ def filter_by_gpt(
             print(str(len(paper_list)) + " papers after hindex filtering")
         cost = 0
         paper_list, cost = filter_papers_by_title(
-            paper_list, config, client, base_prompt, criterion
+            paper_list, config, base_prompt, criterion
         )
         if config["OUTPUT"].getboolean("debug_messages"):
             print(
@@ -224,7 +240,7 @@ def filter_by_gpt(
         for batch in tqdm(batch_of_papers):
             scored_in_batch = []
             json_dicts, cost = run_on_batch(
-                batch, base_prompt, criterion, postfix_prompt, client, config
+                batch, base_prompt, criterion, postfix_prompt, config
             )
             all_cost += cost
             for jdict in json_dicts:
