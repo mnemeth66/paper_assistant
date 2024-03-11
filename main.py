@@ -239,11 +239,11 @@ if __name__ == "__main__":
             with open(config["OUTPUT"]["output_path"] + "output.md", "w") as f:
                 f.write(render_md_string(selected_papers))
         # only push to slack for non-empty dicts
-        if config["OUTPUT"].getboolean("push_to_slack"):
-            SLACK_KEY = os.environ.get("SLACK_KEY")
-            if SLACK_KEY is None:
-                print(
-                    "Warning: push_to_slack is true, but SLACK_KEY is not set - not pushing to slack"
-                )
-            else:
-                push_to_slack(selected_papers)
+        # if config["OUTPUT"].getboolean("push_to_slack"):
+        #     SLACK_KEY = os.environ.get("SLACK_KEY")
+        #     if SLACK_KEY is None:
+        #         print(
+        #             "Warning: push_to_slack is true, but SLACK_KEY is not set - not pushing to slack"
+        #         )
+        #     else:
+        #         push_to_slack(selected_papers)
