@@ -84,7 +84,7 @@ def call_client(full_prompt, client, config):
             temperature=0.0,
 
         )
-        content, usage = message.content.text, message.usage
+        content, usage = message.content[0].text, message.usage
     else:
         print(f'client type {client_type} not yet implemented.')
     

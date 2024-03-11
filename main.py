@@ -175,7 +175,6 @@ if __name__ == "__main__":
 
     S2_API_KEY = os.environ.get("S2_KEY")
     OAI_KEY = os.environ.get("OAI_KEY")
-    ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY")
     if OAI_KEY is None:
         raise ValueError(
             "OpenAI key is not set - please set OAI_KEY to your OpenAI key"
@@ -183,7 +182,7 @@ if __name__ == "__main__":
     if config["SELECTION"]["model_provider"] == "openai":
         client = OpenAI(api_key=OAI_KEY)
     if config["SELECTION"]["model_provider"] == "anthropic":
-        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        client = anthropic.Anthropic()
     # load the author list
     with io.open("configs/authors.txt", "r") as fopen:
         author_names, author_ids = parse_authors(fopen.readlines())
