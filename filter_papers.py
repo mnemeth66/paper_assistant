@@ -5,6 +5,7 @@ import os
 import re
 from typing import List
 
+from anthropic import Anthropic
 import retry
 from openai import OpenAI
 from tqdm import tqdm
@@ -88,7 +89,7 @@ def call_client(full_prompt, config):
     elif client_type == "anthropic":
         # Set up client
         ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
         # Get response
         message = client.messages.create(
