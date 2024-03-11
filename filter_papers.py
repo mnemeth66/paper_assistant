@@ -58,22 +58,43 @@ def calc_price(model, usage):
         return (0.03 * usage.prompt_tokens + 0.06 * usage.completion_tokens) / 1000.0
     if (model == "gpt-3.5-turbo") or (model == "gpt-3.5-turbo-1106"):
         return (0.0015 * usage.prompt_tokens + 0.002 * usage.completion_tokens) / 1000.0
+    if (model == "claude-3-sonnet-20240229"):
+        return (0.003 * usage.prompt_tokens + 0.015 * usage.completion_tokens) / 1000.0
 
 
 @retry.retry(tries=3, delay=2)
-def call_chatgpt(full_prompt, openai_client, model):
-    return openai_client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": full_prompt}],
-        temperature=0.0,
-        seed=0,
-    )
+def call_client(full_prompt, client, model):
+    client_type = config["SELECTION"]["model_provider"]
+    model = config["SELECTION"]["model"]
+    if client_type == "openai":
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": full_prompt}],
+            temperature=0.0,
+            seed=0,
+        )
+        content, usage = response.choices[0].message.content, response.usage
+    elif client_type == "anthropic":
+        message = client.messages.create(
+            model=model,
+            max_tokens=4096,
+            messages=[
+                {"role": "user", "content": full_prompt}
+            ],
+            temperature=0.0,
+
+        )
+        content, usage = message.content.text, message.usage
+    else:
+        print(f'client type {client_type} not yet implemented.')
+    
+    return content, usage
 
 
-def run_and_parse_chatgpt(full_prompt, openai_client, config):
+def run_and_parse_chatgpt(full_prompt, client, config):
     # just runs the chatgpt prompt, tries to parse the resulting JSON
-    completion = call_chatgpt(full_prompt, openai_client, config["SELECTION"]["model"])
-    out_text = completion.choices[0].message.content
+    content, usage = call_client(full_prompt, client, config["SELECTION"]["model"])
+    out_text = out_text
     out_text = re.sub("```jsonl\n", "", out_text)
     out_text = re.sub("```", "", out_text)
     out_text = re.sub(r"\n+", "\n", out_text)
@@ -92,7 +113,7 @@ def run_and_parse_chatgpt(full_prompt, openai_client, config):
                 print("RAW output")
                 print(completion.choices[0].message.content)
             continue
-    return json_dicts, calc_price(config["SELECTION"]["model"], completion.usage)
+    return json_dicts, calc_price(config["SELECTION"]["model"], usage)
 
 
 def paper_to_string(paper_entry: Paper) -> str:
@@ -119,7 +140,7 @@ def batched(items, batch_size):
 
 
 def filter_papers_by_title(
-    papers, config, openai_client, base_prompt, criterion
+    papers, config, client, base_prompt, criterion
 ) -> List[Paper]:
     filter_postfix = 'Identify any papers that are absolutely and completely irrelavent to the criteria, and you are absolutely sure your friend will not enjoy, formatted as a list of DOIs like ["DOI1", "DOI2", "DOI3"..]. Be extremely cautious, and if you are unsure at all, do not add a paper in this list. You will check it in detail later.\n Directly respond with the list, do not add ANY extra text before or after the list. Even if every paper seems irrelevant, please keep at least TWO papers'
     batches_of_papers = batched(papers, 20)
@@ -131,9 +152,9 @@ def filter_papers_by_title(
             base_prompt + "\n " + criterion + "\n" + papers_string + filter_postfix
         )
         model = config["SELECTION"]["model"]
-        completion = call_chatgpt(full_prompt, openai_client, model)
-        cost += calc_price(model, completion.usage)
-        out_text = completion.choices[0].message.content
+        content, usage = call_client(full_prompt, client, model)
+        cost += calc_price(model, usage)
+        out_text = content
         try:
             filtered_set = set(json.loads(out_text))
             for paper in batch:
@@ -154,7 +175,7 @@ def paper_to_titles(paper_entry: Paper) -> str:
 
 
 def run_on_batch(
-    paper_batch, base_prompt, criterion, postfix_prompt, openai_client, config
+    paper_batch, base_prompt, criterion, postfix_prompt, client, config
 ):
     batch_str = [paper_to_string(paper) for paper in paper_batch]
     full_prompt = "\n".join(
@@ -165,12 +186,12 @@ def run_on_batch(
             postfix_prompt,
         ]
     )
-    json_dicts, cost = run_and_parse_chatgpt(full_prompt, openai_client, config)
+    json_dicts, cost = run_and_parse_chatgpt(full_prompt, client, config)
     return json_dicts, cost
 
 
 def filter_by_gpt(
-    all_authors, papers, config, openai_client, all_papers, selected_papers, sort_dict
+    all_authors, papers, config, client, all_papers, selected_papers, sort_dict
 ):
     # deal with config parsing
     with open("configs/base_prompt.txt", "r") as f:
@@ -180,14 +201,14 @@ def filter_by_gpt(
     with open("configs/postfix_prompt.txt", "r") as f:
         postfix_prompt = f.read()
     all_cost = 0
-    if config["SELECTION"].getboolean("run_openai"):
+    if config["SELECTION"].getboolean("run_ai"):
         # filter first by hindex of authors to reduce costs.
         paper_list = filter_papers_by_hindex(all_authors, papers, config)
         if config["OUTPUT"].getboolean("debug_messages"):
             print(str(len(paper_list)) + " papers after hindex filtering")
         cost = 0
         paper_list, cost = filter_papers_by_title(
-            paper_list, config, openai_client, base_prompt, criterion
+            paper_list, config, client, base_prompt, criterion
         )
         if config["OUTPUT"].getboolean("debug_messages"):
             print(
@@ -203,7 +224,7 @@ def filter_by_gpt(
         for batch in tqdm(batch_of_papers):
             scored_in_batch = []
             json_dicts, cost = run_on_batch(
-                batch, base_prompt, criterion, postfix_prompt, openai_client, config
+                batch, base_prompt, criterion, postfix_prompt, client, config
             )
             all_cost += cost
             for jdict in json_dicts:
@@ -242,7 +263,7 @@ if __name__ == "__main__":
     keyconfig = configparser.ConfigParser()
     keyconfig.read("configs/keys.ini")
     S2_API_KEY = keyconfig["KEYS"]["semanticscholar"]
-    openai_client = OpenAI(api_key=keyconfig["KEYS"]["openai"])
+    client = OpenAI(api_key=keyconfig["KEYS"]["openai"])
     # deal with config parsing
     with open("configs/base_prompt.txt", "r") as f:
         base_prompt = f.read()
@@ -272,7 +293,7 @@ if __name__ == "__main__":
     total_cost = 0
     for batch in tqdm(papers):
         json_dicts, cost = run_on_batch(
-            batch, base_prompt, criterion, postfix_prompt, openai_client, config
+            batch, base_prompt, criterion, postfix_prompt, client, config
         )
         total_cost += cost
         for paper in batch:

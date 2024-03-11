@@ -3,6 +3,7 @@ import configparser
 import os
 import time
 
+import anthropic
 from openai import OpenAI
 from requests import Session
 from typing import TypeVar, Generator
@@ -174,11 +175,15 @@ if __name__ == "__main__":
 
     S2_API_KEY = os.environ.get("S2_KEY")
     OAI_KEY = os.environ.get("OAI_KEY")
+    ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY")
     if OAI_KEY is None:
         raise ValueError(
             "OpenAI key is not set - please set OAI_KEY to your OpenAI key"
         )
-    openai_client = OpenAI(api_key=OAI_KEY)
+    if config["SELECTION"]["model_provider"] == "openai":
+        client = OpenAI(api_key=OAI_KEY)
+    if config["SELECTION"]["model_provider"] == "anthropic":
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
     # load the author list
     with io.open("configs/authors.txt", "r") as fopen:
         author_names, author_ids = parse_authors(fopen.readlines())
@@ -215,7 +220,7 @@ if __name__ == "__main__":
         all_authors,
         papers,
         config,
-        openai_client,
+        client,
         all_papers,
         selected_papers,
         sort_dict,
