@@ -3,11 +3,11 @@ import dataclasses
 import json
 from datetime import datetime, timedelta
 from html import unescape
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import re
 import requests
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -19,25 +19,24 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 @dataclass
 class Paper:
-    def __init__(self, authors: List[str], title: str, abstract: str, doi: str, link: str):
-        self.authors = tuple(authors)  # Make authors immutable
-        self.title = title
-        self.abstract = abstract
-        self.doi = doi
-        self.link = link
+    authors: Tuple[str, ...] = field(default_factory=tuple)
+    title: str = ''
+    abstract: str = ''
+    doi: str = ''
+    link: str = ''
+
+    def __post_init__(self):
+        # Convert authors list to tuple for immutability, if initiated with a list
+        if isinstance(self.authors, list):
+            self.authors = tuple(self.authors)
 
     def __hash__(self):
-        return hash(self.doi)  # Ensure this matches with the immutable identifier
+        return hash(self.doi)
 
     def __eq__(self, other):
         if not isinstance(other, Paper):
             return False
-        return self.doi == other.doi  # Ensuring equality checks are based on a unique property
-
-def is_earlier(ts1, ts2):
-    # compares two biorxiv ids, returns true if ts1 is older than ts2
-    return int(ts1.replace(".", "")) < int(ts2.replace(".", ""))
-
+        return self.doi == other.doi
 
 def get_papers_from_biorxiv_api() -> List[Paper]:
     # look for papers in biorxiv from the last day
