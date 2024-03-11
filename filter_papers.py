@@ -63,7 +63,7 @@ def calc_price(model, usage):
 
 
 @retry.retry(tries=3, delay=2)
-def call_client(full_prompt, client, model):
+def call_client(full_prompt, client, config):
     client_type = config["SELECTION"]["model_provider"]
     model = config["SELECTION"]["model"]
     if client_type == "openai":
@@ -93,7 +93,7 @@ def call_client(full_prompt, client, model):
 
 def run_and_parse_chatgpt(full_prompt, client, config):
     # just runs the chatgpt prompt, tries to parse the resulting JSON
-    content, usage = call_client(full_prompt, client, config["SELECTION"]["model"])
+    content, usage = call_client(full_prompt, client, config)
     out_text = out_text
     out_text = re.sub("```jsonl\n", "", out_text)
     out_text = re.sub("```", "", out_text)
@@ -152,7 +152,7 @@ def filter_papers_by_title(
             base_prompt + "\n " + criterion + "\n" + papers_string + filter_postfix
         )
         model = config["SELECTION"]["model"]
-        content, usage = call_client(full_prompt, client, model)
+        content, usage = call_client(full_prompt, client, config)
         cost += calc_price(model, usage)
         out_text = content
         try:
