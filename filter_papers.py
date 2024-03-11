@@ -89,6 +89,10 @@ def call_client(full_prompt, config):
     elif client_type == "anthropic":
         # Set up client
         ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+        if ANTHROPIC_API_KEY is None:
+            raise ValueError(
+                "ANTHROPIC API Key is not set."
+            )
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
         # Get response
@@ -111,7 +115,7 @@ def call_client(full_prompt, config):
 def run_and_parse_chatgpt(full_prompt, config):
     # just runs the chatgpt prompt, tries to parse the resulting JSON
     content, usage = call_client(full_prompt, config)
-    out_text = out_text
+    out_text = content
     out_text = re.sub("```jsonl\n", "", out_text)
     out_text = re.sub("```", "", out_text)
     out_text = re.sub(r"\n+", "\n", out_text)
