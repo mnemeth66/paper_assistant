@@ -20,16 +20,16 @@ def filter_by_author(all_authors, papers, author_targets, config):
 
     # author based selection
     for paper in papers:
-        all_papers[paper.arxiv_id] = paper
+        all_papers[paper.doi] = paper
         for author in paper.authors:
             if author in all_authors:
                 for alias in all_authors[author]:
                     if alias["authorId"] in author_targets:
-                        selected_papers[paper.arxiv_id] = {
+                        selected_papers[paper.doi] = {
                             **dataclasses.asdict(paper),
                             **{"COMMENT": "Author match"},
                         }
-                        sort_dict[paper.arxiv_id] = float(
+                        sort_dict[paper.doi] = float(
                             config["SELECTION"]["author_match_score"]
                         )
                         break
@@ -98,8 +98,8 @@ def run_and_parse_chatgpt(full_prompt, openai_client, config):
 def paper_to_string(paper_entry: Paper) -> str:
     # renders each paper into a string to be processed by GPT
     new_str = (
-        "ArXiv ID: "
-        + paper_entry.arxiv_id
+        "DOI: "
+        + paper_entry.doi
         + "\n"
         + "Title: "
         + paper_entry.title
@@ -121,7 +121,7 @@ def batched(items, batch_size):
 def filter_papers_by_title(
     papers, config, openai_client, base_prompt, criterion
 ) -> List[Paper]:
-    filter_postfix = 'Identify any papers that are absolutely and completely irrelavent to the criteria, and you are absolutely sure your friend will not enjoy, formatted as a list of arxiv ids like ["ID1", "ID2", "ID3"..]. Be extremely cautious, and if you are unsure at all, do not add a paper in this list. You will check it in detail later.\n Directly respond with the list, do not add ANY extra text before or after the list. Even if every paper seems irrelevant, please keep at least TWO papers'
+    filter_postfix = 'Identify any papers that are absolutely and completely irrelavent to the criteria, and you are absolutely sure your friend will not enjoy, formatted as a list of DOIs like ["DOI1", "DOI2", "DOI3"..]. Be extremely cautious, and if you are unsure at all, do not add a paper in this list. You will check it in detail later.\n Directly respond with the list, do not add ANY extra text before or after the list. Even if every paper seems irrelevant, please keep at least TWO papers'
     batches_of_papers = batched(papers, 20)
     final_list = []
     cost = 0
@@ -137,10 +137,10 @@ def filter_papers_by_title(
         try:
             filtered_set = set(json.loads(out_text))
             for paper in batch:
-                if paper.arxiv_id not in filtered_set:
+                if paper.doi not in filtered_set:
                     final_list.append(paper)
                 else:
-                    print("Filtered out paper " + paper.arxiv_id)
+                    print("Filtered out paper " + paper.doi)
         except Exception as ex:
             print("Exception happened " + str(ex))
             print("Failed to parse LM output as list " + out_text)
@@ -150,7 +150,7 @@ def filter_papers_by_title(
 
 
 def paper_to_titles(paper_entry: Paper) -> str:
-    return "ArXiv ID: " + paper_entry.arxiv_id + " Title: " + paper_entry.title + "\n"
+    return "DOI: " + paper_entry.doi + " Title: " + paper_entry.title + "\n"
 
 
 def run_on_batch(
@@ -211,16 +211,16 @@ def filter_by_gpt(
                     int(jdict["RELEVANCE"])
                     >= int(config["FILTERING"]["relevance_cutoff"])
                     and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
-                    and jdict["ARXIVID"] in all_papers
+                    and jdict["DOI"] in all_papers
                 ):
-                    selected_papers[jdict["ARXIVID"]] = {
-                        **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+                    selected_papers[jdict["DOI"]] = {
+                        **dataclasses.asdict(all_papers[jdict["DOI"]]),
                         **jdict,
                     }
-                    sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
+                    sort_dict[jdict["DOI"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
                 scored_in_batch.append(
                     {
-                        **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+                        **dataclasses.asdict(all_papers[jdict["DOI"]]),
                         **jdict,
                     }
                 )
@@ -232,6 +232,7 @@ def filter_by_gpt(
                 json.dump(scored_batches, outfile, cls=EnhancedJSONEncoder, indent=4)
         if config["OUTPUT"].getboolean("debug_messages"):
             print("Total cost: $" + str(all_cost))
+        return all_cost
 
 
 if __name__ == "__main__":
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     papers = [
         [
             Paper(
-                arxiv_id=paper["arxiv_id"],
+                doi=paper["doi"],
                 authors=paper["authors"],
                 title=paper["title"],
                 abstract=paper["abstract"],
@@ -275,13 +276,13 @@ if __name__ == "__main__":
         )
         total_cost += cost
         for paper in batch:
-            all_papers[paper.arxiv_id] = paper
+            all_papers[paper.doi] = paper
         for jdict in json_dicts:
-            paper_outputs[jdict["ARXIVID"]] = {
-                **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+            paper_outputs[jdict["DOI"]] = {
+                **dataclasses.asdict(all_papers[jdict["DOI"]]),
                 **jdict,
             }
-            sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
+            sort_dict[jdict["DOI"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
 
         # sort the papers by relevance and novelty
     print("total cost:" + str(total_cost))
