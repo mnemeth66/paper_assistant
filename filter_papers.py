@@ -225,7 +225,12 @@ def filter_by_gpt(
     all_cost = 0
     if config["SELECTION"].getboolean("run_ai"):
         # filter first by hindex of authors to reduce costs.
-        paper_list = filter_papers_by_hindex(all_authors, papers, config)
+
+        # Commenting this out for now, since Biorxiv isn't giving full names and therefore Semantic Scholar
+        # is having a hard time getting the hindex for most of them.
+        # paper_list = filter_papers_by_hindex(all_authors, papers, config)
+        paper_list = list(papers)
+
         if config["OUTPUT"].getboolean("debug_messages"):
             print(str(len(paper_list)) + " papers after hindex filtering")
         cost = 0
