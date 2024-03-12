@@ -39,10 +39,10 @@ class Paper:
         return self.doi == other.doi
 
 def get_papers_from_biorxiv_api() -> List[Paper]:
-    # look for papers in biorxiv from the last day
+    # look for papers in biorxiv from 2 days ago, because they don't all update on the same day
 
     # Get today's date and yesterday's date
-    today = datetime.now()
+    today = datetime.now() - timedelta(days=1)
     yesterday = today - timedelta(days=1)
 
     # Format the dates
