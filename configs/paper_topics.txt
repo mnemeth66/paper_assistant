@@ -6,13 +6,19 @@
    - Relevant: new problems where machine learning models can be used to substantially improve prediction. New ML architecture design for biology. Creative new uses of ML in biological problems or workflows.
    - Not relevant: marginal improvements just from applying the newest ML architecture to an already heavily modeled problem.
 
-3. New synthetic biology technologies
-   - Relevant: new technologies that creatively use existing biotechnologies, and offer rich discussions of what new applications are enabled by it.
+3. New synthetic biology technologies applicable for biomedical research, therapeutic use, or biomanufacturing
+   - Relevant: new technologies that creatively use existing biotechnologies, and offer rich discussions of what new applications are enabled by it
+   - Not relevant: new technologies that are pretty basic biology without discussion of translatable applications especially in non-humans - eg. understanding a new metabolic pathway in C. elegans
+
+4. Papers with high translational value in the spaces of Immunology, Cancer Biology, Neurology, and Drug Discovery
+   - Relevant: any new papers in the above fields, especially ones with near-translational value. New biological findings related to cancer biology or immunology are especially interesting.
    - Not relevant: 
 
-4. Gene Editing, Immunology, Drug Discovery, Gene Delivery
-   - Relevant: any new papers in the following contexts
-
-
- In suggesting papers to your friend, remember that he enjoys papers on machine learning, synthetic biology, gene editing, protein engineering, and immunology.
+5. New genome engineering technologies, which includes Gene Editing, Epigenetics, and Gene Delivery
+   - Relevant: new methods of gene integration, epigenetic editing, new techniques for in-vivo gene Delivery
+   - Not relevant:
+   
+ In suggesting papers to your friend, remember that he enjoys papers on machine learning, synthetic biology, gene editing, protein engineering, and immunology,
+ especially ones with high translational value.
+ Include papers that have filed for patents - they usually indicate having translational value.
  Your friend also likes learning about usage of machine learning in biological applications.
