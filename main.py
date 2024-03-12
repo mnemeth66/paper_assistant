@@ -206,7 +206,7 @@ if __name__ == "__main__":
     selected_papers, all_papers, sort_dict = filter_by_author(
         all_authors, papers, author_id_set, config
     )
-    filter_by_gpt(
+    cost = filter_by_gpt(
         all_authors,
         papers,
         config,
@@ -232,6 +232,7 @@ if __name__ == "__main__":
         if config["OUTPUT"].getboolean("dump_md"):
             with open(config["OUTPUT"]["output_path"] + "output.md", "w") as f:
                 f.write(render_md_string(selected_papers))
+                f.write(f"Cost: ${cost}")
         # only push to slack for non-empty dicts
         # if config["OUTPUT"].getboolean("push_to_slack"):
         #     SLACK_KEY = os.environ.get("SLACK_KEY")
