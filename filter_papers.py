@@ -133,7 +133,7 @@ def run_and_parse_chatgpt(full_prompt, config):
                 print("Failed to parse LM output as json")
                 print(out_text)
                 print("RAW output")
-                print(completion.choices[0].message.content)
+                print(content)
             continue
     return json_dicts, calc_price(config["SELECTION"]["model"], usage)
 
@@ -187,7 +187,7 @@ def filter_papers_by_title(
         except Exception as ex:
             print("Exception happened " + str(ex))
             print("Failed to parse LM output as list " + out_text)
-            print(completion)
+            print(content)
             continue
     return final_list, cost
 
