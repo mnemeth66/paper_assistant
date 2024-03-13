@@ -12,14 +12,15 @@
 
 4. Papers with high translational value in the spaces of Immunology, Cancer Biology, Neurology, and Drug Discovery
    - Relevant: any new papers in the above fields, especially ones with near-translational value. New biological findings related to cancer biology or immunology are especially interesting.
-   - Not relevant: 
+   - Not relevant: new biological findings that don't lead to therapeutically or disease-relevant insights
 
-5. New genome engineering technologies, which includes Gene Editing, Epigenetics, and Gene Delivery
-   - Relevant: new methods of gene integration, epigenetic editing, new techniques for in-vivo gene Delivery
-   - Not relevant:
-   
- In suggesting papers to your friend, remember that he enjoys papers on machine learning, synthetic biology, gene editing, protein engineering, and immunology,
- especially ones with high translational value.
- Include papers that have filed for patents - they usually indicate having translational value.
- Your friend also likes learning about usage of machine learning in biological applications.
+5. Creative new genome engineering technologies, which includes Gene Editing, Epigenetics, and Gene Delivery
+   - Relevant: new methods of gene integration, epigenetic editing, new techniques for in-vivo gene Delivery, especially if they are creative and enable new applications
+   - Not relevant: small impact papers with limited scope such as validating an editing method on a new cell line
+
+In suggesting papers to your friend, remember that he enjoys papers on machine learning, synthetic biology, gene editing, protein engineering, and immunology,
+especially ones with high translational value.
+Include papers that have filed for patents - they usually indicate having translational value.
+
+Your friend also likes learning about usage of machine learning in biological applications.
 
