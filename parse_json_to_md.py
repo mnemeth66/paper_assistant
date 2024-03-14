@@ -44,7 +44,6 @@ def render_title_and_author(paper_entry: dict, idx: int) -> str:
     paper_string += f'**Authors:** {", ".join(authors)}\n'
     return paper_string
 
-
 def compute_score(paper):
     # Adjust weights as needed
     relevance_weight = 0.6
@@ -56,21 +55,25 @@ def render_md_string(papers_dict):
     with open("configs/paper_topics.txt", "r") as f:
         criterion = f.read()
 
-    # Filter and sort papers if more than 50
-    if len(papers_dict) > 50:
-        # Compute combined score for each paper
-        for paper in papers_dict.values():
-            paper['SCORE'] = compute_score(paper)
+    # Compute combined score for each paper and filter out those below the threshold
+    filtered_papers = {}
+    for key, paper in papers_dict.items():
+        score = compute_score(paper)
+        if score >= 7:  # Apply score threshold here
+            paper['SCORE'] = score
+            filtered_papers[key] = paper
 
-        # Sort papers based on the new combined score
-        sorted_papers = sorted(papers_dict.values(), key=lambda x: x['SCORE'], reverse=True)
-        papers_dict = {k: sorted_papers[i] for i, k in enumerate(sorted(papers_dict)[:50])}
+    # Filter and sort papers if more than 50
+    if len(filtered_papers) > 50:
+        # Sort papers based on the combined score
+        sorted_papers = sorted(filtered_papers.values(), key=lambda x: x['SCORE'], reverse=True)
+        filtered_papers = {k: sorted_papers[i] for i, k in enumerate(sorted(filtered_papers)[:50])}
 
     output_string = (
         "# Personalized Daily Biorxiv Papers "
         + datetime.today().strftime("%m/%d/%Y")
         + "\nTotal relevant papers: "
-        + str(len(papers_dict))
+        + str(len(filtered_papers))
         + "\n\n"
         + "Paper selection prompt and criteria at the bottom\n\n"
         + "Table of contents with paper titles:\n\n"
@@ -78,18 +81,18 @@ def render_md_string(papers_dict):
 
     title_strings = [
         render_title_and_author(paper, i)
-        for i, paper in enumerate(papers_dict.values())
+        for i, paper in enumerate(filtered_papers.values())
     ]
     output_string = output_string + "\n".join(title_strings) + "\n---\n"
 
     # Render each paper
     paper_strings = [
-        render_paper(paper, i) for i, paper in enumerate(papers_dict.values())
+        render_paper(paper, i) for i, paper in enumerate(filtered_papers.values())
     ]
     # Join all papers into one string
     output_string = output_string + "\n".join(paper_strings)
     output_string += "\n\n---\n\n"
-    output_string += f"## Paper selection prompt\n{criterion}"
+    output_string += f"## Paper selection prompt\n{criterion} \n"
     return output_string
 
 
