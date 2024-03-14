@@ -59,10 +59,12 @@ def calc_price(model, usage):
     if model == "gpt-4":
         return (0.03 * usage.prompt_tokens + 0.06 * usage.completion_tokens) / 1000.0
     if (model == "gpt-3.5-turbo") or (model == "gpt-3.5-turbo-0125"):
-        return (0.0015 * usage.prompt_tokens + 0.002 * usage.completion_tokens) / 1000.0
+        return (0.0005 * usage.prompt_tokens + 0.0015 * usage.completion_tokens) / 1000.0
     if (model == "claude-3-sonnet-20240229"):
         # Anthropic uses input and output tokens
         return (0.003 * usage.input_tokens + 0.015 * usage.output_tokens) / 1000.0
+    if (model == "claude-3-haiku-20240307"):
+        return (0.00025 * usage.input_tokens + 0.00125 * usage.output_tokens) / 1000.0
 
 
 @retry.retry(tries=3, delay=2)
