@@ -67,7 +67,7 @@ def calc_price(model, usage):
         return (0.00025 * usage.input_tokens + 0.00125 * usage.output_tokens) / 1000.0
 
 
-@retry.retry(tries=3, delay=2)
+@retry.retry(tries=3, delay=10)
 def call_client(full_prompt, config):
     client_type = config["SELECTION"]["model_provider"]
     model = config["SELECTION"]["model"]
