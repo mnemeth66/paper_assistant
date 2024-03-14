@@ -56,7 +56,7 @@ def get_papers_from_biorxiv_api() -> List[Paper]:
     # Get the number of new papers that day
     response = requests.get(url)
     data = response.json()
-    n_papers = data['messages'][0]['total']
+    n_papers = int(data['messages'][0]['total'])
     
     # Collect all of the papers
     paper_list = []
