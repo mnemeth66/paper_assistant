@@ -45,10 +45,27 @@ def render_title_and_author(paper_entry: dict, idx: int) -> str:
     return paper_string
 
 
+def compute_score(paper):
+    # Adjust weights as needed
+    relevance_weight = 0.6
+    novelty_weight = 0.4
+    return relevance_weight * paper['RELEVANCE'] + novelty_weight * paper['NOVELTY']
+
 def render_md_string(papers_dict):
     # header
     with open("configs/paper_topics.txt", "r") as f:
         criterion = f.read()
+
+    # Filter and sort papers if more than 50
+    if len(papers_dict) > 50:
+        # Compute combined score for each paper
+        for paper in papers_dict.values():
+            paper['SCORE'] = compute_score(paper)
+
+        # Sort papers based on the new combined score
+        sorted_papers = sorted(papers_dict.values(), key=lambda x: x['SCORE'], reverse=True)
+        papers_dict = {k: sorted_papers[i] for i, k in enumerate(sorted(papers_dict)[:50])}
+
     output_string = (
         "# Personalized Daily Biorxiv Papers "
         + datetime.today().strftime("%m/%d/%Y")
@@ -58,16 +75,18 @@ def render_md_string(papers_dict):
         + "Paper selection prompt and criteria at the bottom\n\n"
         + "Table of contents with paper titles:\n\n"
     )
+
     title_strings = [
         render_title_and_author(paper, i)
         for i, paper in enumerate(papers_dict.values())
     ]
     output_string = output_string + "\n".join(title_strings) + "\n---\n"
-    # render each paper
+
+    # Render each paper
     paper_strings = [
         render_paper(paper, i) for i, paper in enumerate(papers_dict.values())
     ]
-    # join all papers into one string
+    # Join all papers into one string
     output_string = output_string + "\n".join(paper_strings)
     output_string += "\n\n---\n\n"
     output_string += f"## Paper selection prompt\n{criterion}"

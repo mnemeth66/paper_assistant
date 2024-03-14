@@ -1,22 +1,29 @@
-1. New methodological improvements for protein engineering.
-   - Relevant: papers that discuss new machine learning models, assay and screen design specifically for improvement of protein engineering methods.
+1. Protein Engineering
+   - Relevant: papers that discuss new machine learning models, assay and screen design specifically for improvement of protein engineering (explicit optimization and design of a protein for functional use)
+   - Relevant: new methods for AI in protein design
    - Not relevant: papers that are just applying old methodologies, unless the biological problem is very interesting.
 
-2. Novel ways to design or use machine learning or AI for biological modeling.
-   - Relevant: new problems where machine learning models can be used to substantially improve prediction. New ML architecture design for biology. Creative new uses of ML in biological problems or workflows.
-   - Not relevant: marginal improvements just from applying the newest ML architecture to an already heavily modeled problem.
-
-3. New synthetic biology technologies applicable for biomedical research, therapeutic use, or biomanufacturing
-   - Relevant: new technologies that creatively use existing biotechnologies, and offer rich discussions of what new applications are enabled by it
-   - Not relevant: new technologies that are pretty basic biology without discussion of translatable applications especially in non-humans - eg. understanding a new metabolic pathway in C. elegans
-
-4. Papers with high translational value in the spaces of Immunology, Cancer Biology, Neurology, and Drug Discovery
-   - Relevant: any new papers in the above fields, especially ones with near-translational value. New biological findings related to cancer biology or immunology are especially interesting.
+2. Papers with high translational value in the spaces of Immunology, Cancer Biology, Neurology (in order of preference - rank Immunology > Cancer Biology > Neurology)
+   - Relevant: papers with translational value - eg. a discovery that can immediately be targeted for drug discovery, or a new method for chemical design for drug discovery
+   - Relevant: Immunology: new techniques in CAR-T, or weaponizing other immune cell types for disease understanding and therapy
+   - Relevant: Cancer Biology: discovering new biological mechanisms of metastasis, new methods of cancer diagnostics based on sequencing or immunology
+   - Relevant: Neurology: new methods for drug discovery or understanding disease development in the brain
+   - Not Relevant: Cancer Biology: prefer not to have population genomics
    - Not relevant: new biological findings that don't lead to therapeutically or disease-relevant insights
 
-5. Creative new genome engineering technologies, which includes Gene Editing, Epigenetics, and Gene Delivery
-   - Relevant: new methods of gene integration, epigenetic editing, new techniques for in-vivo gene Delivery, especially if they are creative and enable new applications
+3. Creative new genome engineering technologies, which includes Gene Editing, Epigenetics, and Gene Delivery
+   - Relevant: new methods of gene integration and epigenetic editing, discoveries or 
+   - Relevant: new designs for LNPs or virology for gene delivery, especially ones that mention doing genome mining and checking for immunogenicity
    - Not relevant: small impact papers with limited scope such as validating an editing method on a new cell line
+
+4. New creative synthetic biology technologies applicable for biomedical research, therapeutic use, or biomanufacturing.
+   - Relevant: new technologies that creatively use existing biotechnologies, and offer rich discussions of what new applications are enabled by it. MUST have some therapeutic or mammalian relevance
+   - Relevant: new technologies that enable novel ways to measure mammalian cellular biology
+   - Not relevant: new basic biology techniques (such as being able to do gene editing of C. elegans), unless they relate to any other Relevant topics
+
+5. Novel ML for biological modeling or drug discovery
+   - Relevant: new problems where machine learning models can be used to substantially improve prediction. New ML architecture design for biology. Creative new uses of ML in biological problems or workflows. eg. "interpretable design of antimicrobials using structure-based machine learning"
+   - Not relevant: applying the new popular machine learning architecture on an existing dataset, without any wet lab validation or specific learnings. These papers often sound like "Machine Learning successfully predicts X property"
 
 In suggesting papers to your friend, remember that he enjoys papers on machine learning, synthetic biology, gene editing, protein engineering, and immunology,
 especially ones with high translational value.
