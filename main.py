@@ -202,8 +202,6 @@ def main():
         postfix_prompt, 
         config
     )
-    print(sort_dict)
-    print(selected_papers)
 
     # Sort papers by score
     keys = list(sort_dict.keys())
@@ -221,13 +219,13 @@ def main():
         print("Sorted papers:", sorted_papers)
 
     # pick endpoints and push the summaries
-    if len(papers) > 0:
+    if len(sorted_papers) > 0:
         if config["OUTPUT"].getboolean("dump_json"):
             with open(config["OUTPUT"]["output_path"] + "output.json", "w") as outfile:
-                json.dump(selected_papers, outfile, indent=4)
+                json.dump(sorted_papers, outfile, cls=EnhancedJSONEncoder, indent=4)
         if config["OUTPUT"].getboolean("dump_md"):
             with open(config["OUTPUT"]["output_path"] + "output.md", "w") as f:
-                f.write(render_md_string(selected_papers))
+                f.write(render_md_string(sorted_papers))
                 f.write(f"Cost: ${cost}")
         # only push to slack for non-empty dicts
         # if config["OUTPUT"].getboolean("push_to_slack"):

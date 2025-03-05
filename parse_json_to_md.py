@@ -59,7 +59,7 @@ def render_md_string(papers_dict):
     filtered_papers = {}
     for key, paper in papers_dict.items():
         score = compute_score(paper)
-        if score >= 7:  # Apply score threshold here
+        if score >= 7:  # Apply score threshold here, eventually make this a toggle [TODO]
             paper['SCORE'] = score
             filtered_papers[key] = paper
 

@@ -279,16 +279,20 @@ def filter_by_gpt(papers: List[Paper], base_prompt: str, criterion: str, postfix
                 
                 print(f"Paper DOI: {paper.doi}, Total Score: {total_score}")
                 
-                # Only include papers with non-zero scores
-                if total_score > 0:
+                # Only include papers with scores > 7
+                if total_score > 7:
                     selected_papers[paper.doi] = {
-                        'paper': paper,
-                        'relevance': json_response.get('RELEVANCE', 0),
-                        'novelty': json_response.get('NOVELTY', 0)
+                        'doi': paper.doi,
+                        'title': paper.title,
+                        'abstract': paper.abstract,
+                        'authors': paper.authors,  # This should be a list of strings
+                        'RELEVANCE': json_response.get('RELEVANCE', 0),
+                        'NOVELTY': json_response.get('NOVELTY', 0),
+                        'COMMENT': json_response.get('COMMENT', '')
                     }
                     sort_dict[paper.doi] = total_score
                 else:
-                    print(f"Paper {paper.doi} filtered out due to zero total score")
+                    print(f"Paper {paper.doi} filtered out due to low total score ({total_score})")
         
         except Exception as e:
             print(f"Error processing batch: {e}")
