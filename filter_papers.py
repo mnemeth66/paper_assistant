@@ -15,43 +15,43 @@ from arxiv_scraper import EnhancedJSONEncoder
 from google import genai
 
 
-def filter_by_author(all_authors, papers, author_targets, config):
-    # filter and parse the papers
-    selected_papers = {}  # pass to output
-    all_papers = {}  # dict for later filtering
-    sort_dict = {}  # dict storing key and score
+# def filter_by_author(all_authors, papers, author_targets, config):
+#     # filter and parse the papers
+#     selected_papers = {}  # pass to output
+#     all_papers = {}  # dict for later filtering
+#     sort_dict = {}  # dict storing key and score
+# 
+#     # author based selection
+#     for paper in papers:
+#         all_papers[paper.doi] = paper
+#         for author in paper.authors:
+#             if author in all_authors:
+#                 for alias in all_authors[author]:
+#                     if alias["authorId"] in author_targets:
+#                         selected_papers[paper.doi] = {
+#                             **dataclasses.asdict(paper),
+#                             **{"COMMENT": "Author match"},
+#                         }
+#                         sort_dict[paper.doi] = float(
+#                             config["SELECTION"]["author_match_score"]
+#                         )
+#                         break
+#     return selected_papers, all_papers, sort_dict
 
-    # author based selection
-    for paper in papers:
-        all_papers[paper.doi] = paper
-        for author in paper.authors:
-            if author in all_authors:
-                for alias in all_authors[author]:
-                    if alias["authorId"] in author_targets:
-                        selected_papers[paper.doi] = {
-                            **dataclasses.asdict(paper),
-                            **{"COMMENT": "Author match"},
-                        }
-                        sort_dict[paper.doi] = float(
-                            config["SELECTION"]["author_match_score"]
-                        )
-                        break
-    return selected_papers, all_papers, sort_dict
 
-
-def filter_papers_by_hindex(all_authors, papers, config):
-    # filters papers by checking to see if there's at least one author with > hcutoff hindex
-    paper_list = []
-    for paper in papers:
-        max_h = 0
-        for author in paper.authors:
-            if author in all_authors:
-                max_h = max(
-                    max_h, max([alias["hIndex"] for alias in all_authors[author]])
-                )
-        if max_h >= float(config["FILTERING"]["hcutoff"]):
-            paper_list.append(paper)
-    return paper_list
+# def filter_papers_by_hindex(all_authors, papers, config):
+#     # filters papers by checking to see if there's at least one author with > hcutoff hindex
+#     paper_list = []
+#     for paper in papers:
+#         max_h = 0
+#         for author in paper.authors:
+#             if author in all_authors:
+#                 max_h = max(
+#                     max_h, max([alias["hIndex"] for alias in all_authors[author]])
+#                 )
+#         if max_h >= float(config["FILTERING"]["hcutoff"]):
+#             paper_list.append(paper)
+#     return paper_list
 
 
 def calc_price(model, usage):
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     # now load the api keys
     keyconfig = configparser.ConfigParser()
     keyconfig.read("configs/keys.ini")
-    S2_API_KEY = keyconfig["KEYS"]["semanticscholar"]
+    # S2_API_KEY = keyconfig["KEYS"]["semanticscholar"]  # Commented out as not needed
     client = OpenAI(api_key=keyconfig["KEYS"]["openai"])
     # deal with config parsing
     with open("configs/base_prompt.txt", "r") as f:

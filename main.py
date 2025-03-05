@@ -177,42 +177,20 @@ def main():
         if not os.getenv("GEMINI_API_KEY"):
             raise ValueError("GEMINI_API_KEY environment variable not set")
     
-    S2_API_KEY = os.environ.get("S2_KEY")
-    # load the author list
-    with io.open("configs/authors.txt", "r") as fopen:
-        author_names, author_ids = parse_authors(fopen.readlines())
-    author_id_set = set(author_ids)
-
     papers = list(get_papers_from_arxiv(config))
-    # dump all papers for debugging
-
-    all_authors = set()
-    for paper in papers:
-        all_authors.update(set(paper.authors))
-    if config["OUTPUT"].getboolean("debug_messages"):
-        print("Getting author info for " + str(len(all_authors)) + " authors")
-    all_authors = get_authors(list(all_authors), S2_API_KEY)
+    # Initialize empty containers that were previously populated by author filtering
+    selected_papers = {}
+    all_papers = {paper.doi: paper for paper in papers}
+    sort_dict = {}
 
     if config["OUTPUT"].getboolean("dump_debug_file"):
         with open(
             config["OUTPUT"]["output_path"] + "papers.debug.json", "w"
         ) as outfile:
             json.dump(papers, outfile, cls=EnhancedJSONEncoder, indent=4)
-        with open(
-            config["OUTPUT"]["output_path"] + "all_authors.debug.json", "w"
-        ) as outfile:
-            json.dump(all_authors, outfile, cls=EnhancedJSONEncoder, indent=4)
-        with open(
-            config["OUTPUT"]["output_path"] + "author_id_set.debug.json", "w"
-        ) as outfile:
-            json.dump(list(author_id_set), outfile, cls=EnhancedJSONEncoder, indent=4)
 
-    selected_papers, all_papers, sort_dict = filter_by_author(
-        all_authors, papers, author_id_set, config
-    )
     cost = filter_by_gpt(
-        all_authors,
-        papers,
+        all_papers,
         config,
         all_papers,
         selected_papers,
