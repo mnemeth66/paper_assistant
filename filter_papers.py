@@ -198,34 +198,108 @@ def filter_papers_by_title(
 def paper_to_titles(paper_entry: Paper) -> str:
     return "DOI: " + paper_entry.doi + " Title: " + paper_entry.title + "\n"
 
+def parse_gemini_response(response_text: str) -> List[Dict]:
+    """
+    Robust parsing of Gemini's response to extract JSON objects.
+    
+    Args:
+        response_text (str): Full text response from Gemini
+    
+    Returns:
+        List[Dict]: Parsed JSON responses
+    """
+    # Split the text into lines
+    lines = response_text.strip().split('\n')
+    
+    json_responses = []
+    for line in lines:
+        try:
+            # Try to parse each line as JSON
+            # Remove any leading/trailing whitespace
+            cleaned_line = line.strip()
+            
+            # Skip empty lines
+            if not cleaned_line:
+                continue
+            
+            # Try to parse the line as JSON
+            json_obj = json.loads(cleaned_line)
+            json_responses.append(json_obj)
+        
+        except json.JSONDecodeError:
+            # If a line can't be parsed, print it for debugging
+            print(f"Could not parse line as JSON: {line}")
+            # Optionally, you could log this or handle it differently
+            continue
+    
+    return json_responses
 
-def filter_by_gpt(papers: List[Paper], base_prompt: str, criterion: str, postfix_prompt: str, config: configparser.ConfigParser) -> Tuple[List[Dict], float]:
+def filter_by_gpt(papers: List[Paper], base_prompt: str, criterion: str, postfix_prompt: str, config: configparser.ConfigParser) -> Tuple[Dict[str, Paper], Dict[str, float], float]:
     # Initialize Gemini client
     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
     
-    # Format prompt
-    prompt = f"{base_prompt}\n{criterion}\n\n[PAPERS]\n"
-    for paper in papers:
-        prompt += f"Title: {paper.title}\nAbstract: {paper.abstract}\n\n"
-    prompt += postfix_prompt
+    # Initialize result containers
+    selected_papers = {}
+    sort_dict = {}
+    total_cost = 0.0
     
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
+    # Process papers in batches of 10
+    batches = batched(papers, 10)  # Using the existing batched function
+    
+    for batch in tqdm(batches, desc="Processing paper batches"):
+        # Format prompt for scoring papers
+        prompt = f"{base_prompt}\n{criterion}\n\n[PAPERS]\n"
+        for paper in batch:
+            prompt += f"DOI: {paper.doi}\nTitle: {paper.title}\nAbstract: {paper.abstract}\n\n"
+        prompt += postfix_prompt
         
-        # Parse response into JSON format
-        json_responses = [json.loads(line) for line in response.text.strip().split('\n')]
-        
-        # Map responses to papers
-        for paper, json_response in zip(papers, json_responses):
-            json_response['DOI'] = paper.doi
+        try:
+            print(f"Processing batch of {len(batch)} papers...")
+            print(f"Full prompt length: {len(prompt)} characters")
             
-        return json_responses, 0.0  # Cost is 0 since Gemini is free
-    except Exception as e:
-        print(f"Error in Gemini API call: {e}")
-        return [], 0.0
+            response = client.models.generate_content(
+                model="gemini-2.0-flash", 
+                contents=prompt
+            )
+            
+            # Debug: print full response text
+            print("Full response text:")
+            print(response.text)
+            print("-" * 50)
+            
+            # Parse response into JSON format
+            json_responses = parse_gemini_response(response.text)
+            
+            print(f"Parsed {len(json_responses)} JSON responses")
+            
+            # Process responses for this batch
+            for paper, json_response in zip(batch, json_responses):
+                # Calculate total score
+                total_score = json_response.get('RELEVANCE', 0) + json_response.get('NOVELTY', 0)
+                
+                print(f"Paper DOI: {paper.doi}, Total Score: {total_score}")
+                
+                # Only include papers with non-zero scores
+                if total_score > 0:
+                    selected_papers[paper.doi] = {
+                        'paper': paper,
+                        'relevance': json_response.get('RELEVANCE', 0),
+                        'novelty': json_response.get('NOVELTY', 0)
+                    }
+                    sort_dict[paper.doi] = total_score
+                else:
+                    print(f"Paper {paper.doi} filtered out due to zero total score")
+        
+        except Exception as e:
+            print(f"Error processing batch: {e}")
+            print(f"Problematic prompt: {prompt[:1000]}...")  # Print first 1000 chars of prompt
+            # Continue to next batch instead of returning immediately
+            continue
+
+    
+    # Return after processing all batches
+    print(f"Total selected papers: {len(selected_papers)}")
+    return selected_papers, sort_dict, total_cost
 
 
 def run_on_batch(

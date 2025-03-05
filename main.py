@@ -180,9 +180,6 @@ def main():
     papers = list(get_papers_from_arxiv(config))
     print(f'Extracted {len(papers)} papers from arxiv')
     # Initialize empty containers that were previously populated by author filtering
-    selected_papers = {}
-    all_papers = {paper.doi: paper for paper in papers}
-    sort_dict = {}
 
     if config["OUTPUT"].getboolean("dump_debug_file"):
         with open(
@@ -198,22 +195,30 @@ def main():
     with open("configs/postfix_prompt.txt", "r") as f:
         postfix_prompt = f.read()
 
-    cost = filter_by_gpt(
+    selected_papers, sort_dict, cost = filter_by_gpt(
         papers,
         base_prompt,
         criterion, 
-        postfix_prompt,
+        postfix_prompt, 
         config
     )
+    print(sort_dict)
+    print(selected_papers)
 
-    # sort the papers by relevance and novelty
+    # Sort papers by score
     keys = list(sort_dict.keys())
     values = list(sort_dict.values())
     sorted_keys = [keys[idx] for idx in argsort(values)[::-1]]
-    selected_papers = {key: selected_papers[key] for key in sorted_keys}
+
+    # Create sorted dictionary with all paper information
+    sorted_papers = {
+        doi: selected_papers[doi] 
+        for doi in sorted_keys
+    }
+
     if config["OUTPUT"].getboolean("debug_messages"):
-        print(sort_dict)
-        print(selected_papers)
+        print("Scores:", sort_dict)
+        print("Sorted papers:", sorted_papers)
 
     # pick endpoints and push the summaries
     if len(papers) > 0:
