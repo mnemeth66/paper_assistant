@@ -168,11 +168,15 @@ def parse_authors(lines):
     return authors, author_ids
 
 
-if __name__ == "__main__":
-    # now load config.ini
+def main():
     config = configparser.ConfigParser()
     config.read("configs/config.ini")
-
+    
+    # Validate environment variables
+    if config["SELECTION"]["model_provider"] == "gemini":
+        if not os.getenv("GEMINI_API_KEY"):
+            raise ValueError("GEMINI_API_KEY environment variable not set")
+    
     S2_API_KEY = os.environ.get("S2_KEY")
     # load the author list
     with io.open("configs/authors.txt", "r") as fopen:
@@ -242,3 +246,7 @@ if __name__ == "__main__":
         #         )
         #     else:
         #         push_to_slack(selected_papers)
+
+
+if __name__ == "__main__":
+    main()

@@ -3,7 +3,7 @@ import dataclasses
 import json
 import os
 import re
-from typing import List
+from typing import List, Tuple, Dict
 
 from anthropic import Anthropic
 import retry
@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from arxiv_scraper import Paper
 from arxiv_scraper import EnhancedJSONEncoder
+from google import genai
 
 
 def filter_by_author(all_authors, papers, author_targets, config):
@@ -198,91 +199,49 @@ def paper_to_titles(paper_entry: Paper) -> str:
     return "DOI: " + paper_entry.doi + " Title: " + paper_entry.title + "\n"
 
 
-def run_on_batch(
-    paper_batch, base_prompt, criterion, postfix_prompt, config
-):
-    batch_str = [paper_to_string(paper) for paper in paper_batch]
-    full_prompt = "\n".join(
-        [
-            base_prompt,
-            criterion + "\n",
-            "\n\n".join(batch_str) + "\n",
-            postfix_prompt,
-        ]
-    )
-    json_dicts, cost = run_and_parse_chatgpt(full_prompt, config)
-    return json_dicts, cost
-
-
-def filter_by_gpt(
-    all_authors, papers, config, all_papers, selected_papers, sort_dict
-):
-    # deal with config parsing
-    with open("configs/base_prompt.txt", "r") as f:
-        base_prompt = f.read()
-    with open("configs/paper_topics.txt", "r") as f:
-        criterion = f.read()
-    with open("configs/postfix_prompt.txt", "r") as f:
-        postfix_prompt = f.read()
-    all_cost = 0
-    if config["SELECTION"].getboolean("run_ai"):
-        # filter first by hindex of authors to reduce costs.
-
-        # Commenting this out for now, since Biorxiv isn't giving full names and therefore Semantic Scholar
-        # is having a hard time getting the hindex for most of them.
-        # paper_list = filter_papers_by_hindex(all_authors, papers, config)
-        paper_list = list(papers)
-
-        if config["OUTPUT"].getboolean("debug_messages"):
-            print(str(len(paper_list)) + " papers after hindex filtering")
-        cost = 0
-        paper_list, cost = filter_papers_by_title(
-            paper_list, config, base_prompt, criterion
+def filter_by_gpt(papers: List[Paper], base_prompt: str, criterion: str, postfix_prompt: str, config: configparser.ConfigParser) -> Tuple[List[Dict], float]:
+    # Initialize Gemini client
+    client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+    
+    # Format prompt
+    prompt = f"{base_prompt}\n{criterion}\n\n[PAPERS]\n"
+    for paper in papers:
+        prompt += f"Title: {paper.title}\nAbstract: {paper.abstract}\n\n"
+    prompt += postfix_prompt
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
         )
-        if config["OUTPUT"].getboolean("debug_messages"):
-            print(
-                str(len(paper_list))
-                + " papers after title filtering with cost of $"
-                + str(cost)
-            )
-        all_cost += cost
+        
+        # Parse response into JSON format
+        json_responses = [json.loads(line) for line in response.text.strip().split('\n')]
+        
+        # Map responses to papers
+        for paper, json_response in zip(papers, json_responses):
+            json_response['DOI'] = paper.doi
+            
+        return json_responses, 0.0  # Cost is 0 since Gemini is free
+    except Exception as e:
+        print(f"Error in Gemini API call: {e}")
+        return [], 0.0
 
-        # batch the remaining papers and invoke GPT
-        batch_of_papers = batched(paper_list, int(config["SELECTION"]["batch_size"]))
-        scored_batches = []
-        for batch in tqdm(batch_of_papers):
-            scored_in_batch = []
-            json_dicts, cost = run_on_batch(
-                batch, base_prompt, criterion, postfix_prompt, config
-            )
-            all_cost += cost
-            for jdict in json_dicts:
-                if (
-                    int(jdict["RELEVANCE"])
-                    >= int(config["FILTERING"]["relevance_cutoff"])
-                    and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
-                    and jdict["DOI"] in all_papers
-                ):
-                    selected_papers[jdict["DOI"]] = {
-                        **dataclasses.asdict(all_papers[jdict["DOI"]]),
-                        **jdict,
-                    }
-                    sort_dict[jdict["DOI"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
-                scored_in_batch.append(
-                    {
-                        **dataclasses.asdict(all_papers[jdict["DOI"]]),
-                        **jdict,
-                    }
-                )
-            scored_batches.append(scored_in_batch)
-        if config["OUTPUT"].getboolean("dump_debug_file"):
-            with open(
-                config["OUTPUT"]["output_path"] + "gpt_paper_batches.debug.json", "w"
-            ) as outfile:
-                json.dump(scored_batches, outfile, cls=EnhancedJSONEncoder, indent=4)
-        if config["OUTPUT"].getboolean("debug_messages"):
-            print("Total cost: $" + str(all_cost))
-        return all_cost
+
+def run_on_batch(
+    papers: List[Paper],
+    base_prompt: str,
+    criterion: str,
+    postfix_prompt: str,
+    config: configparser.ConfigParser,
+) -> Tuple[List[Dict], float]:
+    """Run the model on a batch of papers."""
+    if config["SELECTION"]["model_provider"] == "gemini":
+        return filter_by_gpt(papers, base_prompt, criterion, postfix_prompt, config)
+    else:
+        papers_string = "".join([paper_to_string(paper) for paper in papers])
+        full_prompt = base_prompt + "\n " + criterion + "\n" + papers_string + postfix_prompt
+        return run_and_parse_chatgpt(full_prompt, config)
 
 
 if __name__ == "__main__":
