@@ -37,7 +37,7 @@ jobs:
         mkdir -p out/
         touch out/.gitkeep
     - name: Upload results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: arxiv-scanner-outputs
         path: |
@@ -45,3 +45,5 @@ jobs:
           !out/.gitignore
         retention-days: 5
         if-no-files-found: warn
+        compression-level: 6
+        overwrite: true
