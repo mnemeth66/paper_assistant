@@ -16,16 +16,13 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    outputs:
-      file-exists: ${{steps.file-check.outputs.file_exists}}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Download artifact
-      id: download-artifact
-      uses: dawidd6/action-download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
-        workflow: cron_runs.yaml
-        workflow_conclusion: success
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
         name: arxiv-scanner-outputs
     - name: Display structure of downloaded files
       run: ls -R
@@ -40,10 +37,10 @@ jobs:
       with:
        token: ${{ secrets.GITHUB_TOKEN }}
        file: output.md
-    - uses: actions/upload-pages-artifact@v2
+    - uses: actions/upload-pages-artifact@v3
       if: steps.check_files.outputs.files_exists == 'true'
       with:
         path: dist
-    - uses: actions/deploy-pages@v1
+    - uses: actions/deploy-pages@v4
       if: steps.check_files.outputs.files_exists == 'true'
       id: deployment
