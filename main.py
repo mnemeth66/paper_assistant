@@ -190,12 +190,20 @@ def main():
         ) as outfile:
             json.dump(papers, outfile, cls=EnhancedJSONEncoder, indent=4)
 
+    # Load prompts from files
+    with open("configs/base_prompt.txt", "r") as f:
+        base_prompt = f.read()
+    with open("configs/paper_topics.txt", "r") as f:
+        criterion = f.read()
+    with open("configs/postfix_prompt.txt", "r") as f:
+        postfix_prompt = f.read()
+
     cost = filter_by_gpt(
         papers,
-        config,
-        papers,
-        selected_papers,
-        sort_dict,
+        base_prompt,
+        criterion, 
+        postfix_prompt,
+        config
     )
 
     # sort the papers by relevance and novelty
