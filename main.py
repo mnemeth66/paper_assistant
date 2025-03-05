@@ -178,6 +178,7 @@ def main():
             raise ValueError("GEMINI_API_KEY environment variable not set")
     
     papers = list(get_papers_from_arxiv(config))
+    print(f'Extracted {len(papers)} papers from arxiv')
     # Initialize empty containers that were previously populated by author filtering
     selected_papers = {}
     all_papers = {paper.doi: paper for paper in papers}
@@ -190,9 +191,9 @@ def main():
             json.dump(papers, outfile, cls=EnhancedJSONEncoder, indent=4)
 
     cost = filter_by_gpt(
-        all_papers,
+        papers,
         config,
-        all_papers,
+        papers,
         selected_papers,
         sort_dict,
     )
