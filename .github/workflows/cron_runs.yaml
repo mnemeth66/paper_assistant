@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -26,15 +27,21 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run main
       env:
-        OAI_KEY: ${{ secrets.OAI_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SLACK_KEY: ${{ secrets.SLACK_KEY }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       run: |
         python main.py
+    - name: Check output directory
+      run: |
+        mkdir -p out/
+        touch out/.gitkeep
     - name: Upload results
       uses: actions/upload-artifact@v3
       with:
         name: arxiv-scanner-outputs
-        path: out/
+        path: |
+          out/
+          !out/.gitignore
         retention-days: 5
+        if-no-files-found: warn
