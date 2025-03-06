@@ -1,8 +1,7 @@
 name: Run daily arxiv
 
 on:
-  # schedule:
-  #   # * is a special character in YAML so you have to quote this string
+  schedule:
     - cron:  '0 13 * * *'
   workflow_dispatch:
   
