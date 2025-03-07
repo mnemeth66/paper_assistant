@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import Dict
 
 
 def render_paper(paper_entry: dict, idx: int) -> str:
@@ -14,14 +13,12 @@ def render_paper(paper_entry: dict, idx: int) -> str:
     # get the title
     title = paper_entry["title"]
     # get the biorxiv url
-    biorxiv_url = f"https://www.biorxiv.org/content/{doi}"
+    biorxiv_url = f"https://biorxiv.org/content/{doi}"
     # get the abstract
     abstract = paper_entry["abstract"]
     # get the authors
     authors = paper_entry["authors"]
-    # Add score data attributes to the paper div
-    paper_string = f'<div class="paper" data-relevance="{paper_entry.get("RELEVANCE", 0)}" data-novelty="{paper_entry.get("NOVELTY", 0)}">\n'
-    paper_string += f'## {idx}. [{title}]({biorxiv_url}) <a id="link{idx}"></a>\n'
+    paper_string = f'## {idx}. [{title}]({biorxiv_url}) <a id="link{idx}"></a>\n'
     paper_string += f"**DOI:** {doi}\n"
     paper_string += f'**Authors:** {", ".join(authors)}\n\n'
     paper_string += f"**Abstract:** {abstract}\n\n"
@@ -34,8 +31,7 @@ def render_paper(paper_entry: dict, idx: int) -> str:
         novelty = paper_entry["NOVELTY"]
         paper_string += f"**Relevance:** {relevance}\n"
         paper_string += f"**Novelty:** {novelty}\n"
-    paper_string += "</div>\n---\n"
-    return paper_string
+    return paper_string + "\n---\n"
 
 
 def render_title_and_author(paper_entry: dict, idx: int) -> str:
@@ -54,65 +50,50 @@ def compute_score(paper):
     novelty_weight = 0.4
     return relevance_weight * paper['RELEVANCE'] + novelty_weight * paper['NOVELTY']
 
-def render_md_string(selected_papers: Dict) -> str:
-    md_string = """
-<style>
-.filter-controls {
-    position: sticky;
-    top: 0;
-    background: white;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    z-index: 100;
-}
-.hidden {
-    display: none;
-}
-</style>
+def render_md_string(papers_dict):
+    # header
+    with open("configs/paper_topics.txt", "r") as f:
+        criterion = f.read()
 
-<div class="filter-controls">
-    <label for="score-threshold">Minimum Total Score:</label>
-    <input type="range" id="score-threshold" min="0" max="20" value="7" step="1">
-    <span id="threshold-value">7</span>
-</div>
+    # Compute combined score for each paper and filter out those below the threshold
+    filtered_papers = {}
+    for key, paper in papers_dict.items():
+        score = compute_score(paper)
+        if score >= 6:  # Apply score threshold here, eventually make this a toggle [TODO]
+            paper['SCORE'] = score
+            filtered_papers[key] = paper
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const threshold = document.getElementById('score-threshold');
-    const thresholdValue = document.getElementById('threshold-value');
-    const papers = document.querySelectorAll('.paper');
+    # Filter and sort papers if more than 50
+    if len(filtered_papers) > 50:
+        # Sort papers based on the combined score
+        sorted_papers = sorted(filtered_papers.values(), key=lambda x: x['SCORE'], reverse=True)
+        filtered_papers = {k: sorted_papers[i] for i, k in enumerate(sorted(filtered_papers)[:50])}
 
-    function updateVisibility() {
-        const minScore = parseInt(threshold.value);
-        thresholdValue.textContent = minScore;
+    output_string = (
+        "# Personalized Daily Biorxiv Papers "
+        + datetime.today().strftime("%m/%d/%Y")
+        + "\nTotal relevant papers: "
+        + str(len(filtered_papers))
+        + "\n\n"
+        + "Paper selection prompt and criteria at the bottom\n\n"
+        + "Table of contents with paper titles:\n\n"
+    )
 
-        papers.forEach(paper => {
-            const relevance = parseInt(paper.dataset.relevance) || 0;
-            const novelty = parseInt(paper.dataset.novelty) || 0;
-            const totalScore = relevance + novelty;
-            
-            if (totalScore >= minScore) {
-                paper.classList.remove('hidden');
-            } else {
-                paper.classList.add('hidden');
-            }
-        });
-    }
+    title_strings = [
+        render_title_and_author(paper, i)
+        for i, paper in enumerate(filtered_papers.values())
+    ]
+    output_string = output_string + "\n".join(title_strings) + "\n---\n"
 
-    threshold.addEventListener('input', updateVisibility);
-    updateVisibility(); // Initial update
-});
-</script>
-
-# Papers
-
-"""
-    
-    # Add papers to the markdown string
-    for idx, (doi, paper) in enumerate(selected_papers.items(), 1):
-        md_string += render_paper(paper, idx)
-    
-    return md_string
+    # Render each paper
+    paper_strings = [
+        render_paper(paper, i) for i, paper in enumerate(filtered_papers.values())
+    ]
+    # Join all papers into one string
+    output_string = output_string + "\n".join(paper_strings)
+    output_string += "\n\n---\n\n"
+    output_string += f"## Paper selection prompt\n{criterion} \n"
+    return output_string
 
 
 if __name__ == "__main__":
