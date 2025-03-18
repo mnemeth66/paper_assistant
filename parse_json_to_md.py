@@ -13,7 +13,7 @@ def render_paper(paper_entry: dict, idx: int) -> str:
     # get the title
     title = paper_entry["title"]
     # get the biorxiv url
-    biorxiv_url = f"https://biorxiv.org/content/{doi}"
+    biorxiv_url = f"https://www.biorxiv.org/content/{doi}"
     # get the abstract
     abstract = paper_entry["abstract"]
     # get the authors
