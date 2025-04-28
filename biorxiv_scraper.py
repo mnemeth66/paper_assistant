@@ -52,10 +52,12 @@ def get_papers_from_biorxiv_api() -> List[Paper]:
 
     # Create the URL string
     url = f"https://api.biorxiv.org/details/biorxiv/{yesterday_str}/{today_str}/0/json"
+    print(f"Querying url: {url}")
 
     # Get the number of new papers that day
     response = requests.get(url)
     data = response.json()
+    print(f"First data: {data['messages'][0]}")
     n_papers = int(data['messages'][0]['total'])
     
     # Collect all of the papers
